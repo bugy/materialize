@@ -1,6 +1,6 @@
 /*!
  * Materialize vundefined (http://materializecss.com)
- * Copyright 2014-2017 Materialize
+ * Copyright 2014-2021 Materialize
  * MIT License (https://raw.githubusercontent.com/materializecss/materialize/master/LICENSE)
  */
 .materialize-red {
@@ -6099,6 +6099,12 @@ body.keyboard-focused .dropdown-content li:focus {
   width: calc(100% - 3rem);
 }
 
+.suffix ~ .chips {
+  margin-right: 3rem;
+  width: 92%;
+  width: calc(100% - 3rem);
+}
+
 .chips:empty ~ label {
   font-size: 0.8rem;
   -webkit-transform: translateY(-140%);
@@ -6582,7 +6588,9 @@ textarea.materialize-textarea + label:after, .select-wrapper + label:after {
 }
 
 .input-field.col .prefix ~ label,
-.input-field.col .prefix ~ .validate ~ label {
+.input-field.col .prefix ~ .validate ~ label,
+.input-field.col .suffix ~ label,
+.input-field.col .suffix ~ .validate ~ label {
   width: calc(100% - 3rem - 1.5rem);
 }
 
@@ -6635,7 +6643,7 @@ textarea.materialize-textarea + label:after, .select-wrapper + label:after {
   left: 0;
 }
 
-.input-field .prefix {
+.input-field .prefix, .input-field .suffix {
   position: absolute;
   width: 3rem;
   font-size: 2rem;
@@ -6644,12 +6652,13 @@ textarea.materialize-textarea + label:after, .select-wrapper + label:after {
   top: 0.5rem;
 }
 
-.input-field .prefix.active {
+.input-field .prefix.active, .input-field .suffix.active {
   color: #26a69a;
 }
 
 .input-field .prefix ~ input,
 .input-field .prefix ~ textarea,
+.input-field .prefix ~ .select-wrapper,
 .input-field .prefix ~ label,
 .input-field .prefix ~ .validate ~ label,
 .input-field .prefix ~ .helper-text,
@@ -6664,17 +6673,39 @@ textarea.materialize-textarea + label:after, .select-wrapper + label:after {
 }
 
 @media only screen and (max-width: 992px) {
-  .input-field .prefix ~ input {
+  .input-field .prefix ~ input,
+  .input-field .suffix ~ input {
     width: 86%;
     width: calc(100% - 3rem);
   }
 }
 
 @media only screen and (max-width: 600px) {
-  .input-field .prefix ~ input {
+  .input-field .prefix ~ input,
+  .input-field .suffix ~ input {
     width: 80%;
     width: calc(100% - 3rem);
   }
+}
+
+.input-field .suffix {
+  right: 0;
+}
+
+.input-field .suffix ~ input,
+.input-field .suffix ~ textarea,
+.input-field .suffix ~ .select-wrapper,
+.input-field .suffix ~ label,
+.input-field .suffix ~ .validate ~ label,
+.input-field .suffix ~ .helper-text,
+.input-field .suffix ~ .autocomplete-content {
+  margin-right: 3rem;
+  width: 92%;
+  width: calc(100% - 3rem);
+}
+
+.input-field .suffix ~ label {
+  margin-right: 3rem;
 }
 
 /* Search Field */
@@ -7331,6 +7362,16 @@ body.keyboard-focused .select-dropdown.dropdown-content li:focus {
   margin-left: 3rem;
 }
 
+.suffix ~ .select-wrapper {
+  margin-right: 3rem;
+  width: 92%;
+  width: calc(100% - 3rem);
+}
+
+.suffix ~ label {
+  margin-right: 3rem;
+}
+
 .select-dropdown li img {
   height: 40px;
   width: 40px;
@@ -7605,9 +7646,7 @@ input[type=range]::-ms-thumb {
   margin: 0;
   -webkit-transform: translateX(-100%);
           transform: translateX(-100%);
-  height: 100%;
-  height: calc(100% + 60px);
-  height: -moz-calc(100%);
+  height: 100vh;
   padding-bottom: 60px;
   background-color: #fff;
   z-index: 999;

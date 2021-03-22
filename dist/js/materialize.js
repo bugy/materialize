@@ -1,6 +1,6 @@
 /*!
  * Materialize vundefined (http://materializecss.com)
- * Copyright 2014-2017 Materialize
+ * Copyright 2014-2021 Materialize
  * MIT License (https://raw.githubusercontent.com/materializecss/materialize/master/LICENSE)
  */
 var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -1453,6 +1453,16 @@ M.throttle = function (func, wait, options) {
     return result;
   };
 };
+
+/* Feature detection */
+var passiveIfSupported = false;
+try {
+  window.addEventListener("test", null, Object.defineProperty({}, "passive", {
+    get: function () {
+      passiveIfSupported = { passive: false };
+    }
+  }));
+} catch (err) {}
 ; /*
   v2.2.0
   2017 Julian Garnier
@@ -4461,6 +4471,8 @@ $jscomp.polyfill = function (e, r, p, m) {
     exitDelay: 200,
     enterDelay: 0,
     html: null,
+    text: '',
+    unsafeHTML: null,
     margin: 5,
     inDuration: 250,
     outDuration: 200,
@@ -4519,14 +4531,26 @@ $jscomp.polyfill = function (e, r, p, m) {
 
         var tooltipContentEl = document.createElement('div');
         tooltipContentEl.classList.add('tooltip-content');
-        tooltipContentEl.innerHTML = this.options.html;
+        this._setTooltipContent(tooltipContentEl);
+
         tooltipEl.appendChild(tooltipContentEl);
         document.body.appendChild(tooltipEl);
       }
     }, {
+      key: "_setTooltipContent",
+      value: function _setTooltipContent(tooltipContentEl) {
+        tooltipContentEl.textContent = this.options.text;
+        if (!!this.options.html) {
+          $(tooltipContentEl).append(this.options.html);
+        }
+        if (!!this.options.unsafeHTML) {
+          $(tooltipContentEl).append(this.options.unsafeHTML);
+        }
+      }
+    }, {
       key: "_updateTooltipContent",
       value: function _updateTooltipContent() {
-        this.tooltipEl.querySelector('.tooltip-content').innerHTML = this.options.html;
+        this._setTooltipContent(this.tooltipEl.querySelector('.tooltip-content'));
       }
     }, {
       key: "_setupEventHandlers",
@@ -4755,7 +4779,7 @@ $jscomp.polyfill = function (e, r, p, m) {
         var positionOption = this.el.getAttribute('data-position');
 
         if (tooltipTextOption) {
-          attributeOptions.html = tooltipTextOption;
+          attributeOptions.text = tooltipTextOption;
         }
 
         if (positionOption) {
@@ -5411,6 +5435,8 @@ $jscomp.polyfill = function (e, r, p, m) {
 
   var _defaults = {
     html: '',
+    unsafeHTML: '',
+    text: '',
     displayLength: 4000,
     inDuration: 300,
     outDuration: 375,
@@ -5428,7 +5454,12 @@ $jscomp.polyfill = function (e, r, p, m) {
        * @member Toast#options
        */
       this.options = $.extend({}, Toast.defaults, options);
-      this.message = this.options.html;
+      this.htmlMessage = this.options.html;
+      // If the new unsafeHTML is used, prefer that
+      if (!!this.options.unsafeHTML) {
+        this.htmlMessage = this.options.unsafeHTML;
+      }
+      this.message = this.options.text;
 
       /**
        * Describes current pan state toast
@@ -5471,20 +5502,20 @@ $jscomp.polyfill = function (e, r, p, m) {
           $(toast).addClass(this.options.classes);
         }
 
-        // Set content
-        if (typeof HTMLElement === 'object' ? this.message instanceof HTMLElement : this.message && typeof this.message === 'object' && this.message !== null && this.message.nodeType === 1 && typeof this.message.nodeName === 'string') {
-          toast.appendChild(this.message);
-
-          // Check if it is jQuery object
-        } else if (!!this.message.jquery) {
-          $(toast).append(this.message[0]);
-
-          // Insert as html;
+        // Set safe text content
+        toast.textContent = this.message;
+        if (typeof HTMLElement === 'object' ? this.htmlMessage instanceof HTMLElement : this.htmlMessage && typeof this.htmlMessage === 'object' && this.htmlMessage !== null && this.htmlMessage.nodeType === 1 && typeof this.htmlMessage.nodeName === 'string') {
+          //if the htmlMessage is an HTML node, append it directly
+          toast.appendChild(this.htmlMessage);
+        } else if (!!this.htmlMessage.jquery) {
+          // Check if it is jQuery object, append the node
+          $(toast).append(this.htmlMessage[0]);
         } else {
-          toast.innerHTML = this.message;
+          // Append as unsanitized html;
+          $(toast).append(this.htmlMessage);
         }
 
-        // Append toasft
+        // Append toast
         Toast._container.appendChild(toast);
         return toast;
       }
@@ -5886,11 +5917,11 @@ $jscomp.polyfill = function (e, r, p, m) {
         this._handleCloseReleaseBound = this._handleCloseRelease.bind(this);
         this._handleCloseTriggerClickBound = this._handleCloseTriggerClick.bind(this);
 
-        this.dragTarget.addEventListener('touchmove', this._handleDragTargetDragBound);
+        this.dragTarget.addEventListener('touchmove', this._handleDragTargetDragBound, passiveIfSupported);
         this.dragTarget.addEventListener('touchend', this._handleDragTargetReleaseBound);
-        this._overlay.addEventListener('touchmove', this._handleCloseDragBound);
+        this._overlay.addEventListener('touchmove', this._handleCloseDragBound, passiveIfSupported);
         this._overlay.addEventListener('touchend', this._handleCloseReleaseBound);
-        this.el.addEventListener('touchmove', this._handleCloseDragBound);
+        this.el.addEventListener('touchmove', this._handleCloseDragBound, passiveIfSupported);
         this.el.addEventListener('touchend', this._handleCloseReleaseBound);
         this.el.addEventListener('click', this._handleCloseTriggerClickBound);
 
@@ -6730,11 +6761,18 @@ $jscomp.polyfill = function (e, r, p, m) {
     data: {}, // Autocomplete data set
     limit: Infinity, // Limit of results the autocomplete shows
     onAutocomplete: null, // Callback for when autocompleted
+    dropdownOptions: {
+      // Default dropdown options
+      autoFocus: false,
+      closeOnClick: false,
+      coverTrigger: false
+    },
     minLength: 1, // Min characters before autocomplete starts
     sortFunction: function (a, b, inputString) {
       // Sort function for sorting autocomplete results
       return a.indexOf(inputString) - b.indexOf(inputString);
-    }
+    },
+    allowUnsafeHTML: false
   };
 
   /**
@@ -6863,14 +6901,21 @@ $jscomp.polyfill = function (e, r, p, m) {
         this.$inputField.append(this.container);
         this.el.setAttribute('data-target', this.container.id);
 
-        this.dropdown = M.Dropdown.init(this.el, {
-          autoFocus: false,
-          closeOnClick: false,
-          coverTrigger: false,
-          onItemClick: function (itemEl) {
-            _this38.selectOption($(itemEl));
+        // Initialize dropdown
+        var dropdownOptions = $.extend(Autocomplete.defaults.dropdownOptions, this.options.dropdownOptions);
+        var userOnItemClick = dropdownOptions.onItemClick;
+
+        // Ensuring the selectOption call when user passes custom onItemClick function to dropdown
+        dropdownOptions.onItemClick = function (el) {
+          _this38.selectOption($(el));
+
+          // Handle user declared onItemClick if needed
+          if (userOnItemClick && typeof userOnItemClick === 'function') {
+            userOnItemClick.call(_this38.dropdown, _this38.el);
           }
-        });
+        };
+
+        this.dropdown = M.Dropdown.init(this.el, dropdownOptions);
 
         // Sketchy removal of dropdown click handler
         this.el.removeEventListener('click', this.dropdown._handleClickBound);
@@ -7013,17 +7058,14 @@ $jscomp.polyfill = function (e, r, p, m) {
 
     }, {
       key: "_highlight",
-      value: function _highlight(string, $el) {
-        var img = $el.find('img');
-        var matchStart = $el.text().toLowerCase().indexOf('' + string.toLowerCase() + ''),
-            matchEnd = matchStart + string.length - 1,
-            beforeMatch = $el.text().slice(0, matchStart),
-            matchText = $el.text().slice(matchStart, matchEnd + 1),
-            afterMatch = $el.text().slice(matchEnd + 1);
-        $el.html("<span>" + beforeMatch + "<span class='highlight'>" + matchText + "</span>" + afterMatch + "</span>");
-        if (img.length) {
-          $el.prepend(img);
+      value: function _highlight(input, label) {
+        var start = label.toLowerCase().indexOf('' + input.toLowerCase() + '');
+        var end = start + input.length - 1;
+        //custom filters may return results where the string does not match any part
+        if (start == -1 || end == -1) {
+          return [label, '', ''];
         }
+        return [label.slice(0, start), label.slice(start, end + 1), label.slice(end + 1)];
       }
 
       /**
@@ -7113,15 +7155,31 @@ $jscomp.polyfill = function (e, r, p, m) {
         // Render
         for (var i = 0; i < matchingData.length; i++) {
           var _entry = matchingData[i];
-          var $autocompleteOption = $('<li></li>');
+          var item = document.createElement('li');
           if (!!_entry.data) {
-            $autocompleteOption.append("<img src=\"" + _entry.data + "\" class=\"right circle\"><span>" + _entry.key + "</span>");
-          } else {
-            $autocompleteOption.append('<span>' + _entry.key + '</span>');
+            var img = document.createElement('img');
+            img.classList.add("right", "circle");
+            img.src = _entry.data;
+            item.appendChild(img);
           }
 
-          $(this.container).append($autocompleteOption);
-          this._highlight(val, $autocompleteOption);
+          var parts = this._highlight(val, _entry.key);
+          var s = document.createElement('span');
+          if (this.options.allowUnsafeHTML) {
+            s.innerHTML = parts[0] + '<span class="highlight">' + parts[1] + '</span>' + parts[2];
+          } else {
+            s.appendChild(document.createTextNode(parts[0]));
+            if (!!parts[1]) {
+              var highlight = document.createElement('span');
+              highlight.textContent = parts[1];
+              highlight.classList.add("highlight");
+              s.appendChild(highlight);
+              s.appendChild(document.createTextNode(parts[2]));
+            }
+          }
+          item.appendChild(s);
+
+          $(this.container).append(item);
         }
       }
 
