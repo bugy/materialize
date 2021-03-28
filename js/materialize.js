@@ -2561,9 +2561,7 @@ $jscomp.polyfill = function (e, r, p, m) {
         if (!!this.options.container) {
           $(this.options.container).append(this.dropdownEl);
         } else if (containerEl) {
-          if (!containerEl.contains(this.dropdownEl)) {
-            $(containerEl).append(this.dropdownEl);
-          }
+          $(containerEl).append(this.dropdownEl);
         } else {
           this.$el.after(this.dropdownEl);
         }
@@ -2619,10 +2617,6 @@ $jscomp.polyfill = function (e, r, p, m) {
         if (!alignments.top) {
           if (alignments.bottom) {
             verticalAlignment = 'bottom';
-
-            if (!this.options.coverTrigger) {
-              idealYPos -= triggerBRect.height;
-            }
           } else {
             this.isScrollable = true;
 
@@ -6903,7 +6897,7 @@ $jscomp.polyfill = function (e, r, p, m) {
         this.el.setAttribute('data-target', this.container.id);
 
         // Initialize dropdown
-        var dropdownOptions = $.extend({}, Autocomplete.defaults.dropdownOptions, this.options.dropdownOptions);
+        var dropdownOptions = $.extend(Autocomplete.defaults.dropdownOptions, this.options.dropdownOptions);
         var userOnItemClick = dropdownOptions.onItemClick;
 
         // Ensuring the selectOption call when user passes custom onItemClick function to dropdown
@@ -7159,7 +7153,7 @@ $jscomp.polyfill = function (e, r, p, m) {
           var item = document.createElement('li');
           if (!!_entry.data) {
             var img = document.createElement('img');
-            img.classList.add('right', 'circle');
+            img.classList.add("right", "circle");
             img.src = _entry.data;
             item.appendChild(img);
           }
@@ -7173,7 +7167,7 @@ $jscomp.polyfill = function (e, r, p, m) {
             if (!!parts[1]) {
               var highlight = document.createElement('span');
               highlight.textContent = parts[1];
-              highlight.classList.add('highlight');
+              highlight.classList.add("highlight");
               s.appendChild(highlight);
               s.appendChild(document.createTextNode(parts[2]));
             }
